@@ -182,6 +182,7 @@ extension SubMenuItems {
 
         ToggleA11y(),
         Paste(),
+        Upload(),
         LaunchLogCat()
       ]
 
