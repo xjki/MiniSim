@@ -198,8 +198,11 @@ extension SubMenuItems {
         ToggleA11y(),
         Paste(),
         Upload(),
-        DeleteEmulator(),
-        LaunchLogCat()
+        LaunchLogCat(),
+
+        Separator(),
+
+        DeleteEmulator()
       ]
     }
   }
