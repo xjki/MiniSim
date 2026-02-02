@@ -28,6 +28,7 @@ enum SubMenuItems {
         case paste
         case delete
         case logcat
+        case upload
         case customCommand = 200
     }
 
@@ -110,6 +111,17 @@ enum SubMenuItems {
         )
     }
 
+    struct Upload: SubMenuActionItem {
+        let title = NSLocalizedString("Upload to Downloads...", comment: "")
+        let tag = Tags.upload.rawValue
+        let bootsDevice = false
+        let needBootedDevice = true
+        let image = NSImage(
+            systemSymbolName: "tray.and.arrow.up",
+            accessibilityDescription: "Upload"
+        )
+    }
+
     struct Delete: SubMenuActionItem {
         let title = NSLocalizedString("Delete simulator", comment: "")
         let tag = Tags.delete.rawValue
@@ -184,6 +196,7 @@ extension SubMenuItems {
         NoAudio(),
         ToggleA11y(),
         Paste(),
+        Upload(),
         DeleteEmulator(),
         LaunchLogCat()
       ]

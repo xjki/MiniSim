@@ -21,6 +21,8 @@ protocol ADBProtocol {
   static func isAccesibilityOn(deviceId: String) -> Bool
   static func toggleAccesibility(deviceId: String)
   static func sendText(device: Device, text: String) throws
+  static func push(device: Device, sourcePath: String, destinationPath: String) throws
+  static func broadcastMediaScan(device: Device, path: String) throws
   static func launchLogCat(device: Device) throws
 }
 
@@ -147,6 +149,46 @@ final class ADB: ADBProtocol {
     let formattedText = text.replacingOccurrences(of: " ", with: "%s").replacingOccurrences(of: "'", with: "''")
 
     try shell.execute(command: "\(adbPath) -s \(deviceId) shell input text \"\(formattedText)\"")
+  }
+
+  static func push(device: Device, sourcePath: String, destinationPath: String) throws {
+    let adbPath = try ADB.getAdbPath()
+    guard let deviceId = device.identifier else {
+      throw DeviceError.deviceNotFound
+    }
+
+    try shell.execute(
+      command: adbPath,
+      arguments: ["-s", deviceId, "shell", "mkdir", "-p", destinationPath]
+    )
+    try shell.execute(
+      command: adbPath,
+      arguments: ["-s", deviceId, "push", sourcePath, destinationPath]
+    )
+  }
+
+  static func broadcastMediaScan(device: Device, path: String) throws {
+    let adbPath = try ADB.getAdbPath()
+    guard let deviceId = device.identifier else {
+      throw DeviceError.deviceNotFound
+    }
+
+    let fileUri = "file://\(path)"
+    try shell.execute(
+      command: adbPath,
+      arguments: [
+        "-s",
+        deviceId,
+        "shell",
+        "am",
+        "broadcast",
+        "-a",
+        "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
+        "--receiver-include-background",
+        "-d",
+        fileUri
+      ]
+    )
   }
 
   static func launchLogCat(device: Device) throws {

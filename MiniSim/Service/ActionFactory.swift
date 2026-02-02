@@ -20,6 +20,8 @@ class AndroidActionFactory: ActionFactory {
       return ToggleA11yCommand(device: device)
     case .paste:
       return PasteClipboardAction(device: device)
+    case .upload:
+      return UploadToDownloadsAction(device: device)
     case .delete:
       return DeleteAction(device: device, skipConfirmation: skipConfirmation)
     case .customCommand:

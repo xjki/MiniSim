@@ -100,6 +100,119 @@ class PasteClipboardAction: Action {
   }
 }
 
+class UploadToDownloadsAction: Action {
+  let device: Device
+  private let destinationPath = "/sdcard/Download"
+
+  init(device: Device) {
+    self.device = device
+  }
+
+  func execute() throws {
+    let selectedUrls = pickUploadItems()
+    let filteredUrls = selectedUrls.filter { $0.lastPathComponent != ".DS_Store" }
+    guard !filteredUrls.isEmpty else {
+      return
+    }
+
+    for url in filteredUrls {
+      try uploadItem(url: url)
+    }
+
+    // Best-effort refresh for Files/MediaStore views on Android 11+.
+    _ = try? ADB.broadcastMediaScan(device: device, path: destinationPath)
+
+    let uploadedLabel: String
+    if filteredUrls.count == 1 {
+      uploadedLabel = filteredUrls[0].lastPathComponent
+    } else {
+      uploadedLabel = "\(filteredUrls.count) items"
+    }
+
+    MiniSim.showSuccessMessage(
+      title: "Upload complete",
+      message: "Uploaded \(uploadedLabel) to \(destinationPath)."
+    )
+  }
+
+  private func uploadItem(url: URL) throws {
+    var isDirectory: ObjCBool = false
+    let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+    guard exists else {
+      return
+    }
+
+    if isDirectory.boolValue {
+      try uploadDirectory(url: url)
+    } else {
+      try ADB.push(device: device, sourcePath: url.path, destinationPath: destinationPath)
+    }
+  }
+
+  private func uploadDirectory(url: URL) throws {
+    let baseRemoteDir = destinationPath + "/" + url.lastPathComponent
+    let rootComponents = url.pathComponents
+    let resourceKeys: Set<URLResourceKey> = [.isRegularFileKey]
+
+    guard let enumerator = FileManager.default.enumerator(
+      at: url,
+      includingPropertiesForKeys: Array(resourceKeys),
+      options: [],
+      errorHandler: { _, _ in true }
+    ) else {
+      return
+    }
+
+    for case let fileUrl as URL in enumerator {
+      if fileUrl.lastPathComponent == ".DS_Store" {
+        continue
+      }
+
+      let resourceValues = try fileUrl.resourceValues(forKeys: resourceKeys)
+      guard resourceValues.isRegularFile == true else {
+        continue
+      }
+
+      let fileComponents = fileUrl.pathComponents
+      guard fileComponents.count >= rootComponents.count else {
+        continue
+      }
+
+      let relativeComponents = Array(fileComponents.dropFirst(rootComponents.count))
+      guard !relativeComponents.isEmpty else {
+        continue
+      }
+
+      let relativeDirComponents = Array(relativeComponents.dropLast())
+      let remoteDir = ([baseRemoteDir] + relativeDirComponents).joined(separator: "/")
+
+      try ADB.push(device: device, sourcePath: fileUrl.path, destinationPath: remoteDir)
+    }
+  }
+
+  private func pickUploadItems() -> [URL] {
+    let openPanelAction: () -> [URL] = {
+      let panel = NSOpenPanel()
+      NSApp.activate(ignoringOtherApps: true)
+      panel.allowsMultipleSelection = true
+      panel.canChooseFiles = true
+      panel.canChooseDirectories = true
+      panel.prompt = "Upload"
+      panel.message = "Choose files or folders to upload to \(self.destinationPath)."
+      let response = panel.runModal()
+      return response == .OK ? panel.urls : []
+    }
+
+    if Thread.isMainThread {
+      return openPanelAction()
+    }
+
+    return DispatchQueue.main.sync {
+      openPanelAction()
+    }
+  }
+}
+
 class LaunchLogCat: Action {
   let device: Device
 

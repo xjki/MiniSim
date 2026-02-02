@@ -37,6 +37,8 @@ class ActionFactoryTests: XCTestCase {
         XCTAssertTrue(action is ToggleA11yCommand)
       case .paste:
         XCTAssertTrue(action is PasteClipboardAction)
+      case .upload:
+        XCTAssertTrue(action is UploadToDownloadsAction)
       case .delete:
         XCTAssertTrue(action is DeleteAction)
       case .customCommand:
@@ -51,7 +53,7 @@ class ActionFactoryTests: XCTestCase {
     let device = Device(name: "Test iOS Device", identifier: "test_id", platform: .ios, type: .physical)
 
     for tag in SubMenuItems.Tags.allCases {
-      if tag == .noAudio || tag == .toggleA11y || tag == .paste || tag == .logcat {
+      if tag == .noAudio || tag == .toggleA11y || tag == .paste || tag == .upload || tag == .logcat {
         // These actions are not supported for iOS, so we skip them
         continue
       }

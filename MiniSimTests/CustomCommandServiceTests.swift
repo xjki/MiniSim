@@ -7,6 +7,10 @@ class CustomCommandServiceTests: XCTestCase {
 
     static func sendText(device: Device, text: String) throws {}
 
+    static func push(device: Device, sourcePath: String, destinationPath: String) throws {}
+
+    static func broadcastMediaScan(device: Device, path: String) throws {}
+
     static func launchLogCat(device: Device) throws {}
 
     static func getAndroidHome() throws -> String {
