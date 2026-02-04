@@ -265,25 +265,63 @@ class Menu: NSMenu {
         isDeviceBooted: Bool,
         callback: Selector
     ) -> [NSMenuItem] {
-        subMenuItems.compactMap { item in
+        var menuItems: [NSMenuItem] = []
+
+        subMenuItems.forEach { item in
             if item is SubMenuItems.Separator {
-                return NSMenuItem.separator()
+                menuItems.append(NSMenuItem.separator())
+                return
+            }
+
+            if let item = item as? SubMenuSectionItem {
+                if item.needBootedDevice && !isDeviceBooted {
+                    return
+                }
+                let menuItem = NSMenuItem(title: item.title, action: nil, keyEquivalent: "")
+                menuItem.isEnabled = false
+                menuItems.append(menuItem)
+                return
             }
 
             if let item = item as? SubMenuActionItem {
                 if item.needBootedDevice && !isDeviceBooted {
-                    return nil
+                    return
                 }
 
                 if item.bootsDevice && isDeviceBooted {
-                    return nil
+                    return
                 }
 
-                return NSMenuItem(menuItem: item, target: self, action: callback)
+                menuItems.append(NSMenuItem(menuItem: item, target: self, action: callback))
+                return
             }
-
-            return nil
         }
+
+        return normalizeSeparators(menuItems)
+    }
+
+    private func normalizeSeparators(_ items: [NSMenuItem]) -> [NSMenuItem] {
+        var normalized: [NSMenuItem] = []
+        var previousWasSeparator = true
+
+        for item in items {
+            if item.isSeparatorItem {
+                if previousWasSeparator {
+                    continue
+                }
+                normalized.append(item)
+                previousWasSeparator = true
+            } else {
+                normalized.append(item)
+                previousWasSeparator = false
+            }
+        }
+
+        while normalized.last?.isSeparatorItem == true {
+            normalized.removeLast()
+        }
+
+        return normalized
     }
 
     func createCustomCommandsMenu(for platform: Platform, isDeviceBooted: Bool, callback: Selector) -> [NSMenuItem] {

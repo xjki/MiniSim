@@ -39,6 +39,8 @@ class ActionFactoryTests: XCTestCase {
         XCTAssertTrue(action is PasteClipboardAction)
       case .upload:
         XCTAssertTrue(action is UploadToDownloadsAction)
+      case .localFiles:
+        XCTAssertTrue(action is UnsupportedAction)
       case .delete:
         XCTAssertTrue(action is DeleteAction)
       case .customCommand:
@@ -53,7 +55,7 @@ class ActionFactoryTests: XCTestCase {
     let device = Device(name: "Test iOS Device", identifier: "test_id", platform: .ios, type: .physical)
 
     for tag in SubMenuItems.Tags.allCases {
-      if tag == .noAudio || tag == .toggleA11y || tag == .paste || tag == .upload || tag == .logcat {
+      if tag == .noAudio || tag == .toggleA11y || tag == .paste || tag == .logcat {
         // These actions are not supported for iOS, so we skip them
         continue
       }
@@ -70,6 +72,10 @@ class ActionFactoryTests: XCTestCase {
         XCTAssertTrue(action is ColdBootCommand)
       case .delete:
         XCTAssertTrue(action is DeleteAction)
+      case .upload:
+        XCTAssertTrue(action is UploadToSimulatorFilesAction)
+      case .localFiles:
+        XCTAssertTrue(action is OpenSimulatorFilesAction)
       case .customCommand:
         XCTAssertTrue(action is CustomCommandAction)
       default:

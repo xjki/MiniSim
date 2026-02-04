@@ -18,6 +18,11 @@ protocol SubMenuActionItem: SubMenuItem {
     var image: NSImage? { get }
 }
 
+protocol SubMenuSectionItem: SubMenuItem {
+    var title: String { get }
+    var needBootedDevice: Bool { get }
+}
+
 enum SubMenuItems {
     enum Tags: Int, CaseIterable {
         case copyName = 100
@@ -29,10 +34,16 @@ enum SubMenuItems {
         case delete
         case logcat
         case upload
+        case localFiles
         case customCommand = 200
     }
 
     struct Separator: SubMenuItem { }
+
+    struct SectionTitle: SubMenuSectionItem {
+        let title: String
+        let needBootedDevice: Bool
+    }
 
     struct CopyName: SubMenuActionItem {
         let title = NSLocalizedString("Copy name", comment: "")
@@ -122,6 +133,28 @@ enum SubMenuItems {
         )
     }
 
+    struct UploadToFiles: SubMenuActionItem {
+        let title = NSLocalizedString("Upload...", comment: "")
+        let tag = Tags.upload.rawValue
+        let bootsDevice = false
+        let needBootedDevice = true
+        let image = NSImage(
+            systemSymbolName: "tray.and.arrow.up",
+            accessibilityDescription: "Upload"
+        )
+    }
+
+    struct LocalFiles: SubMenuActionItem {
+        let title = NSLocalizedString("Open in Finder", comment: "")
+        let tag = Tags.localFiles.rawValue
+        let bootsDevice = false
+        let needBootedDevice = true
+        let image = NSImage(
+            systemSymbolName: "folder",
+            accessibilityDescription: "Local Files"
+        )
+    }
+
     struct Delete: SubMenuActionItem {
         let title = NSLocalizedString("Delete simulator", comment: "")
         let tag = Tags.delete.rawValue
@@ -168,6 +201,15 @@ extension SubMenuItems {
       return [
         CopyName(),
         CopyUDID(),
+
+        Separator(),
+
+        SectionTitle(
+            title: NSLocalizedString("Local Files", comment: ""),
+            needBootedDevice: true
+        ),
+        UploadToFiles(),
+        LocalFiles(),
 
         Separator(),
 

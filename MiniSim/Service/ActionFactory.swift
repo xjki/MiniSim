@@ -22,6 +22,8 @@ class AndroidActionFactory: ActionFactory {
       return PasteClipboardAction(device: device)
     case .upload:
       return UploadToDownloadsAction(device: device)
+    case .localFiles:
+      return UnsupportedAction(message: "Local Files is only available for iOS simulators.")
     case .delete:
       return DeleteAction(device: device, skipConfirmation: skipConfirmation)
     case .customCommand:
@@ -39,6 +41,10 @@ class IOSActionFactory: ActionFactory {
       return CopyNameAction(device: device)
     case .copyID:
       return CopyIDAction(device: device)
+    case .upload:
+      return UploadToSimulatorFilesAction(device: device)
+    case .localFiles:
+      return OpenSimulatorFilesAction(device: device)
     case .customCommand:
       return CustomCommandAction(device: device, itemName: itemName)
     case .coldBoot:
