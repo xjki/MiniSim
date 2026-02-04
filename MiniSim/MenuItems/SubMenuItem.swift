@@ -16,6 +16,13 @@ protocol SubMenuActionItem: SubMenuItem {
     var needBootedDevice: Bool { get }
     var bootsDevice: Bool { get }
     var image: NSImage? { get }
+    var toolTip: String? { get }
+}
+
+extension SubMenuActionItem {
+    var toolTip: String? {
+        nil
+    }
 }
 
 protocol SubMenuSectionItem: SubMenuItem {
@@ -123,13 +130,17 @@ enum SubMenuItems {
     }
 
     struct Upload: SubMenuActionItem {
-        let title = NSLocalizedString("Upload to Downloads...", comment: "")
+        let title = NSLocalizedString("Upload...", comment: "")
         let tag = Tags.upload.rawValue
         let bootsDevice = false
         let needBootedDevice = true
         let image = NSImage(
             systemSymbolName: "tray.and.arrow.up",
             accessibilityDescription: "Upload"
+        )
+        let toolTip: String? = NSLocalizedString(
+            "Upload file/folder to internal storage Downloads folder",
+            comment: ""
         )
     }
 
@@ -224,8 +235,15 @@ extension SubMenuItems {
 
         ToggleA11y(),
         Paste(),
-        Upload(),
-        LaunchLogCat()
+        LaunchLogCat(),
+
+        Separator(),
+
+        SectionTitle(
+            title: NSLocalizedString("Local Files", comment: ""),
+            needBootedDevice: true
+        ),
+        Upload()
       ]
 
     case (.android, .virtual):
@@ -239,8 +257,15 @@ extension SubMenuItems {
         NoAudio(),
         ToggleA11y(),
         Paste(),
-        Upload(),
         LaunchLogCat(),
+
+        Separator(),
+
+        SectionTitle(
+            title: NSLocalizedString("Local Files", comment: ""),
+            needBootedDevice: true
+        ),
+        Upload(),
 
         Separator(),
 

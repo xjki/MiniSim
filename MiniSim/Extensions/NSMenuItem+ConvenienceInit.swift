@@ -24,7 +24,7 @@ extension NSMenuItem {
         self.tag = menuItem.tag
         self.image = menuItem.image
         self.title = menuItem.title
-        self.toolTip = menuItem.title
+        self.toolTip = menuItem.toolTip ?? menuItem.title
         self.target = target
         self.action = action
     }
