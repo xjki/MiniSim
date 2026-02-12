@@ -11,6 +11,10 @@ class CustomCommandServiceTests: XCTestCase {
 
     static func broadcastMediaScan(device: Device, path: String) throws {}
 
+    static func directoryExists(device: Device, path: String) throws -> Bool {
+      false
+    }
+
     static func launchLogCat(device: Device) throws {}
 
     static func getAndroidHome() throws -> String {

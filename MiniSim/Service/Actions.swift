@@ -122,31 +122,57 @@ class PasteClipboardAction: Action {
 
 class UploadToDownloadsAction: Action {
   let device: Device
-  private let destinationPath = "/sdcard/Download"
+  let destinationLabel = "Downloads"
 
-  init(device: Device) {
+
+    init(device: Device) {
     self.device = device
   }
 
   func execute() throws {
-    let selectedUrls = pickUploadItems()
-    let filteredUrls = selectedUrls.filter { $0.lastPathComponent != ".DS_Store" }
-    guard !filteredUrls.isEmpty else {
+    guard let destinationPath = try resolveDestinationPath() else {
+      NSSound.beep()
+      NSAlert.showError(
+        message: NSLocalizedString(
+            "Downloads folder not found on device. Expected \(AndroidUploadPathBuilder.primaryDestinationPath) or \(AndroidUploadPathBuilder.fallbackDestinationPath).",
+          comment: ""
+        )
+      )
       return
     }
 
-    for url in filteredUrls {
-      try uploadItem(url: url)
+    let selectedUrls = UploadHelpers.pickUploadItems(
+      prompt: "Upload",
+      message: "Choose files or folders to upload to \(destinationLabel)."
+    )
+
+    let result = try UploadHelpers.processUploadItems(
+      selectedUrls: selectedUrls,
+      destinationLabel: destinationLabel,
+      missingItemHandler: UploadHelpers.promptForMissingItem
+    ) { file in
+      let destinationFilePath = AndroidUploadPathBuilder.destinationFilePath(
+        for: file,
+        destinationPath: destinationPath
+      )
+      try ADB.push(device: device, sourcePath: file.sourceURL.path, destinationPath: destinationFilePath)
     }
 
-    // Best-effort refresh for Files/MediaStore views on Android 11+.
+    if result.canceled || result.uploadedCount == 0 {
+      return
+    }
+      
+    // Best-effort folder content refresh for Files/MediaStore views (Files app) on Android 11+.
+    // (use deprecated MediaScanner broadcast to force path reindexing)
+    // See https://stackoverflow.com/questions/66929450/images-not-shown-in-photos-using-adb-push-pictures-to-android-11-emulator
+    // and https://stackoverflow.com/questions/64552886/adb-push-files-are-not-showing-on-android-11-emulator
     _ = try? ADB.broadcastMediaScan(device: device, path: destinationPath)
 
     let uploadedLabel: String
-    if filteredUrls.count == 1 {
-      uploadedLabel = filteredUrls[0].lastPathComponent
+    if result.uploadedCount == 1, let itemName = result.singleUploadedItemName {
+      uploadedLabel = itemName
     } else {
-      uploadedLabel = "\(filteredUrls.count) items"
+      uploadedLabel = "\(result.uploadedCount) items"
     }
 
     MiniSim.showSuccessMessage(
@@ -155,83 +181,17 @@ class UploadToDownloadsAction: Action {
     )
   }
 
-  private func uploadItem(url: URL) throws {
-    var isDirectory: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-    guard exists else {
-      return
+  private func resolveDestinationPath() throws -> String? {
+    if try ADB.directoryExists(device: device, path: AndroidUploadPathBuilder.primaryDestinationPath) {
+        return AndroidUploadPathBuilder.primaryDestinationPath
     }
-
-    if isDirectory.boolValue {
-      try uploadDirectory(url: url)
-    } else {
-      try ADB.push(device: device, sourcePath: url.path, destinationPath: destinationPath)
+    if try ADB.directoryExists(device: device, path: AndroidUploadPathBuilder.fallbackDestinationPath) {
+        return AndroidUploadPathBuilder.fallbackDestinationPath
     }
-  }
-
-  private func uploadDirectory(url: URL) throws {
-    let baseRemoteDir = destinationPath + "/" + url.lastPathComponent
-    let rootComponents = url.pathComponents
-    let resourceKeys: Set<URLResourceKey> = [.isRegularFileKey]
-
-    guard let enumerator = FileManager.default.enumerator(
-      at: url,
-      includingPropertiesForKeys: Array(resourceKeys),
-      options: [],
-      errorHandler: { _, _ in true }
-    ) else {
-      return
-    }
-
-    for case let fileUrl as URL in enumerator {
-      if fileUrl.lastPathComponent == ".DS_Store" {
-        continue
-      }
-
-      let resourceValues = try fileUrl.resourceValues(forKeys: resourceKeys)
-      guard resourceValues.isRegularFile == true else {
-        continue
-      }
-
-      let fileComponents = fileUrl.pathComponents
-      guard fileComponents.count >= rootComponents.count else {
-        continue
-      }
-
-      let relativeComponents = Array(fileComponents.dropFirst(rootComponents.count))
-      guard !relativeComponents.isEmpty else {
-        continue
-      }
-
-      let relativeDirComponents = Array(relativeComponents.dropLast())
-      let remoteDir = ([baseRemoteDir] + relativeDirComponents).joined(separator: "/")
-
-      try ADB.push(device: device, sourcePath: fileUrl.path, destinationPath: remoteDir)
-    }
-  }
-
-  private func pickUploadItems() -> [URL] {
-    let openPanelAction: () -> [URL] = {
-      let panel = NSOpenPanel()
-      NSApp.activate(ignoringOtherApps: true)
-      panel.allowsMultipleSelection = true
-      panel.canChooseFiles = true
-      panel.canChooseDirectories = true
-      panel.prompt = "Upload"
-      panel.message = "Choose files or folders to upload to \(self.destinationPath)."
-      let response = panel.runModal()
-      return response == .OK ? panel.urls : []
-    }
-
-    if Thread.isMainThread {
-      return openPanelAction()
-    }
-
-    return DispatchQueue.main.sync {
-      openPanelAction()
-    }
+    return nil
   }
 }
+
 
 class LaunchLogCat: Action {
   let device: Device
@@ -393,100 +353,57 @@ class UploadToSimulatorFilesAction: Action {
   }
 
   func execute() throws {
-    let selectedUrls = pickUploadItems()
-    let filteredUrls = selectedUrls.filter { $0.lastPathComponent != ".DS_Store" }
-    guard !filteredUrls.isEmpty else {
+    let storageURL = try SimulatorFileProviderStorage.url(for: device)
+
+    let selectedUrls = UploadHelpers.pickUploadItems(
+      prompt: "Upload",
+      message: "Choose files or folders to upload to \(destinationLabel)."
+    )
+
+    let result = try UploadHelpers.processUploadItems(
+      selectedUrls: selectedUrls,
+      destinationLabel: destinationLabel,
+      missingItemHandler: UploadHelpers.promptForMissingItem,
+      directoryStartHandler: { directoryURL in
+        let baseDestination = storageURL.appendingPathComponent(
+          directoryURL.lastPathComponent,
+          isDirectory: true
+        )
+        try FileManager.default.createDirectory(
+          at: baseDestination,
+          withIntermediateDirectories: true,
+          attributes: nil
+        )
+      }
+    ) { file in
+      let destinationDir = destinationDirectory(for: file, baseURL: storageURL)
+      try FileManager.default.createDirectory(
+        at: destinationDir,
+        withIntermediateDirectories: true,
+        attributes: nil
+      )
+      let destinationFile = destinationDir.appendingPathComponent(
+        file.sourceURL.lastPathComponent,
+        isDirectory: false
+      )
+      try copyItemReplacingIfNeeded(from: file.sourceURL, to: destinationFile)
+    }
+
+    if result.canceled || result.uploadedCount == 0 {
       return
     }
 
-    let storageURL = try SimulatorFileProviderStorage.url(for: device)
-
-    for url in filteredUrls {
-      try uploadItem(url: url, destinationURL: storageURL)
-    }
-
     let uploadedLabel: String
-    if filteredUrls.count == 1 {
-      uploadedLabel = filteredUrls[0].lastPathComponent
+    if result.uploadedCount == 1, let itemName = result.singleUploadedItemName {
+      uploadedLabel = itemName
     } else {
-      uploadedLabel = "\(filteredUrls.count) items"
+      uploadedLabel = "\(result.uploadedCount) items"
     }
 
     MiniSim.showSuccessMessage(
       title: "Upload complete",
       message: "Uploaded \(uploadedLabel) to \(destinationLabel)."
     )
-  }
-
-  private func uploadItem(url: URL, destinationURL: URL) throws {
-    var isDirectory: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-    guard exists else {
-      return
-    }
-
-    if isDirectory.boolValue {
-      try uploadDirectory(url: url, destinationURL: destinationURL)
-    } else {
-      let fileDestination = destinationURL.appendingPathComponent(url.lastPathComponent, isDirectory: false)
-      try copyItemReplacingIfNeeded(from: url, to: fileDestination)
-    }
-  }
-
-  private func uploadDirectory(url: URL, destinationURL: URL) throws {
-    let baseDestination = destinationURL.appendingPathComponent(url.lastPathComponent, isDirectory: true)
-    let rootComponents = url.pathComponents
-    let resourceKeys: Set<URLResourceKey> = [.isRegularFileKey]
-
-    try FileManager.default.createDirectory(
-      at: baseDestination,
-      withIntermediateDirectories: true,
-      attributes: nil
-    )
-
-    guard let enumerator = FileManager.default.enumerator(
-      at: url,
-      includingPropertiesForKeys: Array(resourceKeys),
-      options: [],
-      errorHandler: { _, _ in true }
-    ) else {
-      return
-    }
-
-    for case let fileUrl as URL in enumerator {
-      if fileUrl.lastPathComponent == ".DS_Store" {
-        continue
-      }
-
-      let resourceValues = try fileUrl.resourceValues(forKeys: resourceKeys)
-      guard resourceValues.isRegularFile == true else {
-        continue
-      }
-
-      let fileComponents = fileUrl.pathComponents
-      guard fileComponents.count >= rootComponents.count else {
-        continue
-      }
-
-      let relativeComponents = Array(fileComponents.dropFirst(rootComponents.count))
-      guard !relativeComponents.isEmpty else {
-        continue
-      }
-
-      let relativeDirComponents = Array(relativeComponents.dropLast())
-      let destinationDir = relativeDirComponents.reduce(baseDestination) { partial, component in
-        partial.appendingPathComponent(component, isDirectory: true)
-      }
-
-      try FileManager.default.createDirectory(
-        at: destinationDir,
-        withIntermediateDirectories: true,
-        attributes: nil
-      )
-
-      let destinationFile = destinationDir.appendingPathComponent(fileUrl.lastPathComponent, isDirectory: false)
-      try copyItemReplacingIfNeeded(from: fileUrl, to: destinationFile)
-    }
   }
 
   private func copyItemReplacingIfNeeded(from sourceURL: URL, to destinationURL: URL) throws {
@@ -496,26 +413,15 @@ class UploadToSimulatorFilesAction: Action {
     try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
   }
 
-  private func pickUploadItems() -> [URL] {
-    let openPanelAction: () -> [URL] = {
-      let panel = NSOpenPanel()
-      NSApp.activate(ignoringOtherApps: true)
-      panel.allowsMultipleSelection = true
-      panel.canChooseFiles = true
-      panel.canChooseDirectories = true
-      panel.prompt = "Upload"
-      panel.message = "Choose files or folders to upload to \(self.destinationLabel)."
-      let response = panel.runModal()
-      return response == .OK ? panel.urls : []
+  private func destinationDirectory(for file: UploadFileReference, baseURL: URL) -> URL {
+    var destinationDir = baseURL
+    if let rootDirectoryName = file.rootDirectoryName {
+      destinationDir = destinationDir.appendingPathComponent(rootDirectoryName, isDirectory: true)
     }
-
-    if Thread.isMainThread {
-      return openPanelAction()
+    for component in file.relativeDirectoryComponents {
+      destinationDir = destinationDir.appendingPathComponent(component, isDirectory: true)
     }
-
-    return DispatchQueue.main.sync {
-      openPanelAction()
-    }
+    return destinationDir
   }
 }
 

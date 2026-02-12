@@ -33,4 +33,31 @@ extension NSAlert {
         alert.addButton(withTitle: "Cancel")
         return alert.runModal() == .alertFirstButtonReturn
     }
+
+    static func showWarningDialog(
+        title: String,
+        message: String,
+        primaryButton: String,
+        secondaryButton: String?
+    ) -> NSApplication.ModalResponse {
+        let showAlert: () -> NSApplication.ModalResponse = {
+            let alert = self.init()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: primaryButton)
+            if let secondaryButton {
+                alert.addButton(withTitle: secondaryButton)
+            }
+            return alert.runModal()
+        }
+
+        if Thread.isMainThread {
+            return showAlert()
+        }
+
+        return DispatchQueue.main.sync {
+            showAlert()
+        }
+    }
 }

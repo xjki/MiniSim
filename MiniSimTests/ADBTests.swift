@@ -129,4 +129,35 @@ final class ADBTests: XCTestCase {
     XCTAssertEqual(shellStub.lastExecutedCommand, expectedCommand)
     XCTAssertEqual(shellStub.lastPassedArguments, [])
   }
+
+  func testPushWithSpacesPassesFullArguments() throws {
+    var calls: [(command: String, arguments: [String], path: String)] = []
+    shellStub.mockedExecute = { command, arguments, path in
+      calls.append((command: command, arguments: arguments, path: path))
+      return ""
+    }
+
+    let device = Device(
+      name: "Pixel",
+      version: "14",
+      identifier: "emulator-5554",
+      booted: true,
+      platform: .android,
+      type: .virtual
+    )
+    let sourcePath = "/Users/jki/Downloads/ai assistants.jpg"
+    let destinationPath = "/sdcard/Download/backup mahdi/ai assistants.jpg"
+
+    try ADB.push(device: device, sourcePath: sourcePath, destinationPath: destinationPath)
+
+    XCTAssertEqual(calls.count, 2)
+    XCTAssertEqual(
+      calls[0].arguments,
+      ["-s", "emulator-5554", "shell", "mkdir", "-p", "\"/sdcard/Download/backup mahdi\""]
+    )
+    XCTAssertEqual(
+      calls[1].arguments,
+      ["-s", "emulator-5554", "push", sourcePath, destinationPath]
+    )
+  }
 }

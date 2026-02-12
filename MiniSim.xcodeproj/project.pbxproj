@@ -112,6 +112,9 @@
 		76FCABAB29B390D5003BBF9A /* Collection+get.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76FCABAA29B390D5003BBF9A /* Collection+get.swift */; };
 		7D4142B4F3AF1D150D9222BD /* DeviceFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F78DD26087D5448AAB2CC3B /* DeviceFamily.swift */; };
 		7D850183B2E53A3E4F17994A /* StringMatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9C6AA804E851167EA01B17 /* StringMatchTests.swift */; };
+		7A9C0F1B2D3E4A5B6C7D8EA1 /* UploadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9C0F1B2D3E4A5B6C7D8E9F /* UploadHelpers.swift */; };
+		7A9C0F1B2D3E4A5B6C7D8EA3 /* UploadHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9C0F1B2D3E4A5B6C7D8EA2 /* UploadHelpersTests.swift */; };
+		7B1E9F672D3F4B3C9A0D1B22 /* ShellEscapingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E9F662D3F4B3C9A0D1B21 /* ShellEscapingTests.swift */; };
 		9B225A9C2C7E360D002620BA /* DeviceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B225A9B2C7E360D002620BA /* DeviceType.swift */; };
 /* End PBXBuildFile section */
 
@@ -226,6 +229,9 @@
 		76F2A913299050F9002D4EF6 /* UserDefaults+Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Configuration.swift"; sourceTree = "<group>"; };
 		76F2A9162991B7B6002D4EF6 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		76FCABAA29B390D5003BBF9A /* Collection+get.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Collection+get.swift"; sourceTree = "<group>"; };
+		7A9C0F1B2D3E4A5B6C7D8E9F /* UploadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadHelpers.swift; sourceTree = "<group>"; };
+		7A9C0F1B2D3E4A5B6C7D8EA2 /* UploadHelpersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadHelpersTests.swift; sourceTree = "<group>"; };
+		7B1E9F662D3F4B3C9A0D1B21 /* ShellEscapingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellEscapingTests.swift; sourceTree = "<group>"; };
 		912D7A2027F3DDA86839E7AE /* CollectionGetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CollectionGetTests.swift; sourceTree = "<group>"; };
 		9B225A9B2C7E360D002620BA /* DeviceType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceType.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -359,6 +365,7 @@
 				76BF0ADE2C8E01B3003BE568 /* CustomCommandService.swift */,
 				76BF0AE02C8E027D003BE568 /* DeviceConstants.swift */,
 				76BF0AE52C8E0F83003BE568 /* Actions.swift */,
+				7A9C0F1B2D3E4A5B6C7D8E9F /* UploadHelpers.swift */,
 				76BF0AE72C8E1077003BE568 /* ActionFactory.swift */,
 				76BF0AEF2C9061E8003BE568 /* DeviceDiscoveryService.swift */,
 				76BF0AF12C907032003BE568 /* DeviceServiceFactory.swift */,
@@ -471,6 +478,8 @@
 				76BF0AF32C90A74E003BE568 /* AppleUtilsTests.swift */,
 				76BF0AF52C90AB03003BE568 /* DeviceDiscoveryTests.swift */,
 				76BF0AF72C90ACF2003BE568 /* ActionFactoryTests.swift */,
+				7A9C0F1B2D3E4A5B6C7D8EA2 /* UploadHelpersTests.swift */,
+				7B1E9F662D3F4B3C9A0D1B21 /* ShellEscapingTests.swift */,
 				470EFF3B34FB31AC5A22B024 /* DeviceTests.swift */,
 				6A9C6AA804E851167EA01B17 /* StringMatchTests.swift */,
 				912D7A2027F3DDA86839E7AE /* CollectionGetTests.swift */,
@@ -694,6 +703,7 @@
 				76BF0AF22C907033003BE568 /* DeviceServiceFactory.swift in Sources */,
 				764BA3EB2A5AD43F003A78AF /* LaunchDeviceCommand.swift in Sources */,
 				76BF0AE62C8E0F83003BE568 /* Actions.swift in Sources */,
+				7A9C0F1B2D3E4A5B6C7D8EA1 /* UploadHelpers.swift in Sources */,
 				7630B2732986C68000D8B57D /* PaneIdentifier.swift in Sources */,
 				7630B2662985C44A00D8B57D /* Preferences.swift in Sources */,
 				7625140B2992B46D0060A225 /* Pasteboard+utils.swift in Sources */,
@@ -750,6 +760,8 @@
 				76BF0AE32C8E041C003BE568 /* CustomCommandServiceTests.swift in Sources */,
 				76BF0AF42C90A74E003BE568 /* AppleUtilsTests.swift in Sources */,
 				76BF0AF82C90ACF2003BE568 /* ActionFactoryTests.swift in Sources */,
+				7A9C0F1B2D3E4A5B6C7D8EA3 /* UploadHelpersTests.swift in Sources */,
+				7B1E9F672D3F4B3C9A0D1B22 /* ShellEscapingTests.swift in Sources */,
 				76B70F7E2B0D361A009D87A4 /* UserDefaultsTests.swift in Sources */,
 				760DEACE2B0DFB6600253576 /* ShellStub.swift in Sources */,
 				76B70F822B0D50FE009D87A4 /* ADBTests.swift in Sources */,

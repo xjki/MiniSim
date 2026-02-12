@@ -13,6 +13,10 @@ class DeviceParserTests: XCTestCase {
     static func broadcastMediaScan(device: Device, path: String) throws {
     }
 
+    static func directoryExists(device: Device, path: String) throws -> Bool {
+      false
+    }
+
     static func launchLogCat(device: Device) throws {
     }
 
@@ -345,6 +349,10 @@ class DeviceParserTests: XCTestCase {
       }
 
       static func broadcastMediaScan(device: Device, path: String) throws {
+      }
+
+      static func directoryExists(device: Device, path: String) throws -> Bool {
+        false
       }
 
       static func launchLogCat(device: Device) throws {
